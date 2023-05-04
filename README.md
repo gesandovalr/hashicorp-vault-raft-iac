@@ -39,7 +39,7 @@ This was done using GITLAB and KVM in a lab environment so please adjust your te
 
 In the main playbook change the certificate authority host to your primary node.
 
-    - hosts: kvnode01.lab.local ## <-- Change this for your primary node ot install the certificate authority.
+    - hosts: kvnode01.lab.local ## <-- Change this for your primary node to install the certificate authority.
       become: true
       vars_files:
         - group_vars/deploy_info.yaml
