@@ -4,7 +4,7 @@ The following project aims to automate a hashicorp 3 node raft cluster with Azur
 
 # Prerequisites
 
-Have Azure keyvault setup previously with the following instructions this is the autounseal procedur for the vault nodes.
+Have Azure keyvault setup previously with the following instructions this is for the autounseal procedure for the vault nodes.
 https://andersonsleite.medium.com/deploy-hashicorp-vault-w-auto-unseal-using-azure-gitlab-and-kubernetes-integrated-241e888ac94e
 
 # Vars setup
