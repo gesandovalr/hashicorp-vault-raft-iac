@@ -33,7 +33,7 @@ The file Ansible/Group_Vars/deploy_info has the following variables adjust them 
 
 # Terraform and pipeline
 
-This was done using GITLAB and KVM in a lab environment so please adjust your terraform template and pipeline.
+This was done using GITLAB and KVM in a lab environment so please adjust your terraform template and pipeline configurations.
 
 # Main Playbook
 
