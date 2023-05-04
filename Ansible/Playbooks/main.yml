@@ -7,7 +7,7 @@
       - prerequisites_install
       - hosts_configuration
 
-  - hosts: kvnode01.lab.local ## <-- Change this for your primary node ot install the certificate authority.
+  - hosts: kvnode01.lab.local ## <-- Change this for your primary node to install the certificate authority.
     become: true
     vars_files:
       - group_vars/deploy_info.yaml     
