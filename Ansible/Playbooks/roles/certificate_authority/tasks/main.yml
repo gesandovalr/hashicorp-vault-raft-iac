@@ -1,0 +1,92 @@
+---
+### Generate Key form certificate authority
+  - name: Create private key for the certificate authority
+    community.crypto.openssl_privatekey:
+      size: 2048
+      path: /opt/vault/tls/tls.key
+
+### Generate Request
+  - name: Create certificate signing request (CSR) for new certificate
+    community.crypto.openssl_csr:
+      select_crypto_backend: cryptography
+      create_subject_key_identifier: true 
+      path: /opt/vault/tls/tls.csr
+      privatekey_path: /opt/vault/tls/tls.key   
+      common_name: "Mycompany CA Authority"
+      organization_name: "My Company"
+      organizational_unit_name: "IT"
+      country_name: "US"
+      subject_alt_name: 
+        - "IP:127.0.0.1"
+        - "IP:{{var_group.node_01_ip_address}}"
+        - "IP:{{var_group.node_02_ip_address}}"
+        - "IP:{{var_group.node_03_ip_address}}"
+        - "IP:{{var_group.keepalived_VIP_ip_address}}"
+        - "DNS:{{var_group.node_01_ip_address_dns}}"
+        - "DNS:{{var_group.node_02_ip_address_dns}}"
+        - "DNS:{{var_group.node_03_ip_address_dns}}"
+        - "DNS:{{var_group.keepalived_VIP_ip_address_dns}}"
+        - "DNS:localhost"
+        - "DNS:{{var_group.node_01_short_name}}"
+        - "DNS:{{var_group.node_02_short_name}}"
+        - "DNS:{{var_group.node_03_short_name}}"
+        - "DNS:{{var_group.hashicorp_cluster_name}}"
+        - "DNS:*.{{var_group.domain_fqdn}}"
+      basic_constraints:
+        - 'CA:TRUE'      
+      basic_constraints_critical: true
+      key_usage:
+        - keyCertSign
+        - digitalSignature
+      key_usage_critical: true
+    register: ca_csr
+
+### Create Self signed certificate from CSR
+  - name: Create self-signed CA certificate from CSR
+    community.crypto.x509_certificate:
+      provider: selfsigned
+      path: /opt/vault/tls/tls.crt
+      csr_path: /opt/vault/tls/tls.csr
+      privatekey_path: /opt/vault/tls/tls.key
+      selfsigned_not_after: +3650d  # valid for 10 years
+      selfsigned_not_before: "-1d"  # valid since yesterday
+
+ ### Create a Request
+  - name: Create certificate signing request (CSR) for client certificate
+    community.crypto.openssl_csr:
+      select_crypto_backend: cryptography
+      create_subject_key_identifier: true 
+      path: /opt/vault/tls/tls_ca.csr
+      privatekey_path: /opt/vault/tls/tls.key  
+      common_name: "Client Certificate Hashicorp"
+      organization_name: "Hashicorp Vault"
+      organizational_unit_name: "Vault"
+      country_name: "US"
+      subject_alt_name: 
+        - "IP:127.0.0.1"
+        - "IP:{{var_group.node_01_ip_address}}"
+        - "IP:{{var_group.node_02_ip_address}}"
+        - "IP:{{var_group.node_03_ip_address}}"
+        - "IP:{{var_group.keepalived_VIP_ip_address}}"
+        - "DNS:{{var_group.node_01_ip_address_dns}}"
+        - "DNS:{{var_group.node_02_ip_address_dns}}"
+        - "DNS:{{var_group.node_03_ip_address_dns}}"
+        - "DNS:{{var_group.keepalived_VIP_ip_address_dns}}"
+        - "DNS:localhost"
+        - "DNS:{{var_group.node_01_short_name}}"
+        - "DNS:{{var_group.node_02_short_name}}"
+        - "DNS:{{var_group.node_03_short_name}}"
+        - "DNS:{{var_group.hashicorp_cluster_name}}"
+        - "DNS:*.{{var_group.domain_fqdn}}"
+    register: tls_ca
+
+### Create Self signed certificate from CSR
+  - name: Sign certificate with our CA
+    community.crypto.x509_certificate:
+      csr_path: /opt/vault/tls/tls_ca.csr
+      provider: ownca
+      path: /opt/vault/tls/tls_ca.pem
+      ownca_path: /opt/vault/tls/tls.crt
+      ownca_privatekey_path: /opt/vault/tls/tls.key
+      ownca_not_after: +3650d  # valid for 10 years
+      ownca_not_before: "-1d"  # valid since yesterday

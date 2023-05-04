@@ -1,0 +1,84 @@
+---
+  - name: read secrets
+    include_vars: "secrets.yml"
+
+  - name: install vault
+    ansible.builtin.dnf:
+      name: vault
+      state: latest
+
+  - name: Add J2 template vault
+    template:
+      src: templates/kvnode01_vault_hcl.j2
+      dest: "/etc/vault.d/vault.hcl"
+    when: inventory_hostname in var_group['node_01_fqdn']
+  
+  - name: Add J2 template vault
+    template:
+      src: templates/kvnode02_vault_hcl.j2
+      dest: "/etc/vault.d/vault.hcl"
+    when: inventory_hostname in var_group['node_02_fqdn']
+
+  - name: Add J2 template vault
+    template:
+      src: templates/kvnode03_vault_hcl.j2
+      dest: "/etc/vault.d/vault.hcl"
+    when: inventory_hostname in var_group['node_03_fqdn']
+
+  - name: Change file ownership for vault data directory, group and permissions for vault data directory
+    ansible.builtin.file:
+      path: "/etc/vault.d/vault.hcl" 
+      owner: vault
+      group: vault 
+      mode: '644'
+
+  - name: Restore SELinux context
+    command: restorecon -v /etc/vault.d/vault.hcl
+
+  - name: Change file ownership for vault data directory, group and permissions for vault data directory
+    ansible.builtin.file:
+      path: "/opt/vault"
+      state: directory
+      owner: vault
+      group: vault 
+      recurse: yes
+
+  - name: enable 8200/tcp port
+    ansible.posix.firewalld:
+      port: 8200/tcp
+      permanent: true
+      immediate: yes
+      state: enabled
+
+  - name: enable 8201/tcp port
+    ansible.posix.firewalld:
+      port: 8201/tcp
+      permanent: true
+      immediate: yes
+      state: enabled
+
+  - name: Copy TLS pem file to trusted store
+    shell: cp /opt/vault/tls/tls.crt /etc/pki/ca-trust/source/anchors
+
+  - name: Restore context for certificate file
+    shell: restorecon -v /etc/pki/ca-trust/source/anchors/tls.crt
+
+  - name: update trusted root certificates.
+    shell: update-ca-trust
+
+  - name: Enable Vault
+    shell: systemctl enable vault
+    register: result
+  - debug:
+      msg: "{{result.stdout}}"
+
+  - name: Start vault
+    shell: systemctl start vault
+    register: result
+  - debug:
+      msg: "{{ result.stdout }}"
+
+  - name: Initialize Vault operator
+    shell: vault operator init | tee /opt/vault/init.file
+    register: vault_init_results
+    when: inventory_hostname in var_group['node_01_fqdn']

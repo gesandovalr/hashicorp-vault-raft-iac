@@ -1,0 +1,101 @@
+---
+  - name: pre-tasks update before deployment
+    ansible.builtin.dnf:
+      name: "*"
+      state: latest
+      security: true
+
+  - name: install cargo from rhel REPO
+    ansible.builtin.dnf:
+      name: "cargo"
+      state: latest
+  
+  - name: install rust from rhel REPO
+    ansible.builtin.dnf:
+      name: "rust"
+      state: latest
+
+  - name: install python3 from rhel REPO
+    ansible.builtin.dnf:
+      name: "python3"
+      state: latest
+  
+  - name: install python3 firewall from rhel REPO
+    ansible.builtin.dnf:
+      name: "firewalld"
+      state: latest
+  
+  - name: Start service firewalld, if not started
+    ansible.builtin.service:
+      name: firewalld
+      state: started
+      enabled: true
+
+  - name: install python3 firewall from rhel REPO
+    ansible.builtin.dnf:
+      name: "python3-firewall"
+      state: latest
+  
+  - name: Python upgrade pip
+    shell: python3 -m pip install --upgrade pip
+    register: result
+  - debug:
+      msg: "{{result.stdout}}" 
+
+  - name: Install python module setuptools_rust
+    shell: python3 -m pip install setuptools_rust
+    register: result
+  - debug:
+      msg: "{{result.stdout}}"
+
+  - name: Install python module cryptography
+    shell: python3 -m pip install cryptography
+    register: result
+  - debug:
+      msg: "{{result.stdout}}"
+  
+  - name: Install python module pymysql
+    shell: python3 -m pip install pymysql
+    register: result
+  - debug:
+      msg: "{{result.stdout}}"
+
+  - name: create folder for vault certificate authority
+    ansible.builtin.file:
+      path: /opt/vault
+      state: directory
+  
+  - name: create folder for vault certificate authority
+    ansible.builtin.file:
+      path: /opt/vault/tls
+      state: directory
+
+  - name: create folder for vault certificate authority
+    ansible.builtin.file:
+      path: /opt/vault/data
+      state: directory
+  
+  - name: Import key for epel repo
+    ansible.builtin.rpm_key:
+      state: present
+      key: https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-8
+  
+  - name: Ensure epel repo present
+    ansible.builtin.dnf:
+      name: https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+      state: present
+    become: true
+
+  - name: Add Hashicorp repo
+    become: true
+    become_user: root
+    shell: yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
+    register: result
+  - debug:
+      msg: "{{result.stdout}}"
+  
+  - name: Set httpd_can_network_connect enable this for curl requests
+    ansible.posix.seboolean:
+      name: httpd_can_network_connect
+      state: true
+      persistent: true

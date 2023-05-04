@@ -1,0 +1,42 @@
+## KeepAlived Configuration
+
+## Track Script for checking keepalived avaiability
+vrrp_script check_vault_health {
+
+    script "/usr/libexec/keepalived/vault-health https://localhost:8200/v1/sys/health"
+    interval 3
+}
+
+vrrp_instance VI_1 {
+        state MASTER
+        interface {{var_group.interface_name}}
+        virtual_router_id 90
+        priority 99
+        advert_int 1
+        #nopreempt
+        authentication {
+              auth_type PASS
+              auth_pass mypass.!!
+        }
+        unicast_src_ip {{var_group.node_02_ip_address}}
+        unicast_peer {
+        {{var_group.node_01_ip_address}}
+        {{var_group.node_03_ip_address}}
+        }
+        virtual_ipaddress {
+              {{var_group.keepalived_VIP_ip_address}}
+        }
+
+track_interface {
+
+      # Please make sure to verify interface name using 'nmcli connection show'
+      {{var_group.interface_name}}
+
+    }
+
+track_script {
+
+      check_vault_health
+
+    }
+}

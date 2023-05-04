@@ -1,0 +1,45 @@
+---
+  - hosts: all
+    become: true
+    vars_files:
+      - group_vars/deploy_info.yaml  
+    roles:
+      - prerequisites_install
+      - hosts_configuration
+
+  - hosts: kvnode01.lab.local ## <-- Change this for your primary node ot install the certificate authority.
+    become: true
+    vars_files:
+      - group_vars/deploy_info.yaml     
+
+    roles:
+      - certificate_authority
+
+  - hosts: all
+    become: true
+    vars_files:
+      - group_vars/deploy_info.yaml     
+        
+    roles:
+      - vault_certificate_install
+
+  - hosts: all
+    become: true
+    vars_files:
+      - group_vars/deploy_info.yaml            
+    roles:
+      - vault_install
+   
+  - hosts: all
+    become: true
+    vars_files:
+      - group_vars/deploy_info.yaml
+    
+    roles:
+      - keepalived_install
+  
+  - hosts: all
+    become: true
+    tasks: 
+     - name: Clear gathered facts from all currently targeted hosts
+       ansible.builtin.meta: clear_facts

@@ -1,0 +1,5 @@
+---
+  - name: Add J2 template for host file
+    template:
+      src: templates/hosts.j2
+      dest: "/etc/hosts"

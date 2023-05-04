@@ -1,0 +1,49 @@
+---
+  - name: Install keepalived
+    ansible.builtin.dnf:
+      name: keepalived
+      state: latest  
+
+  - name: create folder for check health Script
+    ansible.builtin.file:
+      path: /usr/libexec/keepalived
+      state: directory
+
+  - name: Add J2 template for Keepalived track script
+    template:
+      src: templates/vault_health.j2
+      dest: "/usr/libexec/keepalived/vault-health"
+      mode: a+x
+
+  - name: Add J2 template for Keepalived
+    vars:
+      node01: "{{ node_01_fqdn }}" 
+    template:
+      src: templates/keepalived.conf-h1.j2
+      dest: "/etc/keepalived/keepalived.conf"
+    when: inventory_hostname in var_group['node_01_fqdn']
+
+  - name: Add J2 template for Keepalived
+    template:
+      src: templates/keepalived.conf-h2.j2
+      dest: "/etc/keepalived/keepalived.conf"
+    when: inventory_hostname in var_group['node_02_fqdn']
+  
+  - name: Add J2 template for Keepalived
+    template:
+      src: templates/keepalived.conf-h3.j2
+      dest: "/etc/keepalived/keepalived.conf"
+    when: inventory_hostname in var_group['node_03_fqdn']
+
+  - name: Add Rich Rule VRRP Firewall
+    ansible.posix.firewalld:
+      rich_rule: rule protocol value="vrrp" accept
+      permanent: true
+      immediate: yes
+      state: enabled
+
+  - name: Service Keepalived Restart
+    ansible.builtin.service:
+      name: keepalived
+      state: restarted
+      enabled: true

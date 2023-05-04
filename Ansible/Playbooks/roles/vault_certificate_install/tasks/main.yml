@@ -1,0 +1,39 @@
+---
+  - name: Fetch the file from the kvnode01 and copy to ansible buffer
+    run_once: true
+    fetch: src=/opt/vault/tls/tls.key dest=buffer/ flat=yes
+    when: inventory_hostname in var_group['node_01_fqdn']
+
+  - name: Fetch the file from the kvnode01 and copy to ansible buffer
+    run_once: true
+    fetch: src=/opt/vault/tls/tls.crt dest=buffer/ flat=yes
+    when: inventory_hostname in var_group['node_01_fqdn']
+
+  - name: Fetch the file from the kvnode01 and copy to ansible buffer
+    run_once: true
+    fetch: src=/opt/vault/tls/tls_ca.pem dest=buffer/ flat=yes
+    when: inventory_hostname in var_group['node_01_fqdn']
+
+  - name: Copy the file from buffer and put it on host kvnode02
+    copy: src=buffer/tls.key  dest=/opt/vault/tls
+    when: inventory_hostname in var_group['node_02_fqdn']
+      
+  - name: Copy the file from buffer and put it on host kvnode02
+    copy: src=buffer/tls.crt dest=/opt/vault/tls
+    when: inventory_hostname in var_group['node_02_fqdn']
+    
+  - name: Copy the file from buffer and put it on host kvnode02
+    copy: src=buffer/tls_ca.pem dest=/opt/vault/tls
+    when: inventory_hostname in var_group['node_02_fqdn']
+
+  - name: Copy the file from buffer and put it on host kvnode03
+    copy: src=buffer/tls.key  dest=/opt/vault/tls
+    when: inventory_hostname in var_group['node_03_fqdn']
+
+  - name: Copy the file from buffer and put it on host kvnode03
+    copy: src=buffer/tls.crt dest=/opt/vault/tls
+    when: inventory_hostname in var_group['node_03_fqdn']
+
+  - name: Copy the file from buffer and put it on host kvnode03
+    copy: src=buffer/tls_ca.pem dest=/opt/vault/tls
+    when: inventory_hostname in var_group['node_03_fqdn']
