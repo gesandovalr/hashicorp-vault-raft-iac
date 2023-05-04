@@ -1,0 +1,72 @@
+# This file is a template, and might need editing before it works on your project.
+# To contribute improvements to CI/CD templates, please follow the Development guide at:
+# https://docs.gitlab.com/ee/development/cicd/templates.html
+# This specific template is located at:
+# https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Terraform.gitlab-ci.yml
+
+include:
+  - template: Terraform/Base.gitlab-ci.yml  # https://gitlab.com/gitlab-org/gitlab/blob/master/lib/gitlab/ci/templates/Terraform/Base.latest.gitlab-ci.yml
+
+variables:
+  TF_ROOT: ${CI_PROJECT_DIR}/Terraform
+    
+cache:
+  key: "$CI_COMMIT_REF_NAME"
+  paths:
+  - ${TF_ROOT}/.terraform
+
+before_script:
+  - cd ${TF_ROOT}
+  - rm -rf .terraform
+  - gitlab-terraform --version
+  - gitlab-terraform init
+  
+stages:
+  - prepare
+  - init
+  - validate
+  - build
+  - deploy
+  - post_terraform_run
+
+init:
+  stage: prepare
+  environment:
+    name: production
+  script:
+    - gitlab-terraform init
+
+validate:
+  stage: validate
+  environment:
+    name: production
+  script:
+    - gitlab-terraform validate
+
+plan:
+  stage: build
+  environment:
+    name: production
+  script:
+    - gitlab-terraform plan
+    - gitlab-terraform plan -json
+  artifacts:
+    name: plan
+    paths:
+      - ${TF_ROOT}/plan.cache
+    reports:
+      terraform: ${TF_ROOT}/plan.json
+
+apply:
+  stage: deploy
+  environment:
+    name: production
+  script:
+    - gitlab-terraform apply -auto-approve
+
+post_terraform_run:
+  when: delayed
+  start_in: 15 seconds
+  stage: post_terraform_run
+  script:
+    - 'curl -k -H "Authorization: Bearer $PAT_TOKEN_AWX" -H "Content-Type: application/json" -X POST -d "{}" http://myawxtower/api/v2/job_templates/1/launch/ | jq'
